@@ -196,6 +196,3 @@ Author
 Sanskar
 Cybersecurity | Cryptography | Secure Systems Engineering
 
-- 📄 Compress this into **resume bullets**
-
-Just say what you want next.
