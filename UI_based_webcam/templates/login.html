@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Stream Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fafafa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 300px;
+            text-align: center;
+        }
+        .logo {
+            margin-bottom: 20px;
+        }
+        input[type="password"] {
+            width: calc(100% - 40px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        input[type="submit"] {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #3897f0;
+            color: #fff;
+            cursor: pointer;
+        }
+        .reset-link {
+            margin-top: 10px;
+            display: block;
+            font-size: 0.9em;
+            color: #00376b;
+            text-decoration: none;
+        }
+        .reset-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Change this src to your actual logo path -->
+        <img class="logo" src="{{ url_for('static', filename='your_logo.jpeg') }}" alt="Logo" width="100">
+
+        <form action="{{ url_for('login') }}" method="post">
+            <input type="password" name="password" placeholder="Password" required><br>
+            <input type="submit" value="Login">
+        </form>
+
+        <a class="reset-link" href="{{ url_for('reset') }}">Forgot password? Reset here</a>
+    </div>
+</body>
+</html>

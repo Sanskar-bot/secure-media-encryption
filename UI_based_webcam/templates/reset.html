@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reset Password</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #fafafa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background-color: #fff;
+      padding: 30px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      width: 300px;
+      text-align: center;
+    }
+    .logo {
+      margin-bottom: 20px;
+    }
+    h2 {
+      margin-bottom: 20px;
+      color: #262626;
+    }
+    input[type="password"] {
+      width: calc(100% - 40px);
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      background-color: #3897f0;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2e76d6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img class="logo" src="{{ url_for('static', filename='your_logo.jpeg') }}" alt="Logo" width="100">
+    <h2>Reset Password</h2>
+    <form method="POST" action="/reset">
+      <input type="password" name="new_password" placeholder="New Password" required>
+      <button type="submit">Reset</button>
+    </form>
+  </div>
+</body>
+</html>

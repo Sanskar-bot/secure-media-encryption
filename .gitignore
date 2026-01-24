@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+
+# Crypto / Keys / Certs
+*.pem
+*.key
+*.p12
+*.crt
+*.cer
+
+# Encrypted / binary output
+*.bin
+*.enc
+
+# Media test files
+*.jpg
+*.png
+*.mp4
+*.avi
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Virtual env
+venv/
+.env

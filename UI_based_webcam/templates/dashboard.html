@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fafafa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 320px;
+            text-align: center;
+        }
+        .logo {
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #262626;
+        }
+        p {
+            font-size: 14px;
+            color: #333;
+            word-break: break-all;
+            margin-bottom: 20px;
+        }
+        a.button {
+            display: block;
+            text-decoration: none;
+            background-color: #3897f0;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            transition: background-color 0.3s;
+        }
+        a.button:hover {
+            background-color: #2e76d6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Optional logo if needed -->
+        <img class="logo" src="{{ url_for('static', filename='your_logo.jpeg') }}" alt="Logo" width="100">
+
+        <h2>Secure Camera</h2>
+        
+
+        <a href="{{ url_for('video_stream') }}" class="button">View Live Video</a>
+        <a href="{{ url_for('encrypted_stream') }}" class="button">View Encrypted Stream</a>
+        <a href="{{ url_for('show_key') }}" class="button">View Encryption Key</a>
+    </div>
+</body>
+</html>
