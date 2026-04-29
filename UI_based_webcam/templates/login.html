@@ -1,70 +1,353 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Stream Login</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #fafafa;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            width: 300px;
-            text-align: center;
-        }
-        .logo {
-            margin-bottom: 20px;
-        }
-        input[type="password"] {
-            width: calc(100% - 40px);
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        input[type="submit"] {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            background-color: #3897f0;
-            color: #fff;
-            cursor: pointer;
-        }
-        .reset-link {
-            margin-top: 10px;
-            display: block;
-            font-size: 0.9em;
-            color: #00376b;
-            text-decoration: none;
-        }
-        .reset-link:hover {
-            text-decoration: underline;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Stream — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:    #0a0c10;
+      --bg-card:    #0e1117;
+      --bg-input:   #151921;
+      --border:     #1e2633;
+      --border-glow:#2a5298;
+      --accent:     #3b82f6;
+      --accent-dim: #1d4ed8;
+      --success:    #22c55e;
+      --danger:     #ef4444;
+      --text-hi:    #e8edf5;
+      --text-mid:   #8b95a8;
+      --text-lo:    #4a5568;
+      --mono:       'JetBrains Mono', monospace;
+      --sans:       'Inter', system-ui, sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg-base);
+      font-family: var(--sans);
+      color: var(--text-hi);
+    }
+
+    /* Subtle grid overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .layout {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* ---------- header mark ---------- */
+    .wordmark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 36px;
+    }
+    .wordmark-icon {
+      width: 36px;
+      height: 36px;
+      border: 1.5px solid var(--border-glow);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+    }
+    .wordmark-icon svg { display: block; }
+    .wordmark-text {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+    }
+
+    /* ---------- card ---------- */
+    .card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px 36px 36px;
+      position: relative;
+      overflow: hidden;
+    }
+    /* top accent line */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+
+    .card-header {
+      margin-bottom: 28px;
+    }
+    .card-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-hi);
+      margin-bottom: 6px;
+    }
+    .card-sub {
+      font-size: 13px;
+      color: var(--text-mid);
+      line-height: 1.5;
+    }
+
+    /* ---------- lock animation ---------- */
+    .lock-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+    .lock {
+      position: relative;
+      width: 48px;
+      height: 44px;
+    }
+    .lock-body {
+      position: absolute;
+      bottom: 0;
+      width: 48px;
+      height: 30px;
+      background: transparent;
+      border: 2px solid var(--border-glow);
+      border-radius: 6px;
+    }
+    .lock-shackle {
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--border-glow);
+      border-bottom: none;
+      border-radius: 11px 11px 0 0;
+      animation: shackle-pulse 3s ease-in-out infinite;
+    }
+    .lock-dot {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: dot-pulse 3s ease-in-out infinite;
+    }
+    @keyframes shackle-pulse {
+      0%, 100% { border-color: var(--border-glow); }
+      50%       { border-color: var(--accent); }
+    }
+    @keyframes dot-pulse {
+      0%, 100% { opacity: .5; box-shadow: 0 0 4px var(--accent); }
+      50%       { opacity: 1; box-shadow: 0 0 12px var(--accent); }
+    }
+
+    /* ---------- form ---------- */
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+      margin-bottom: 7px;
+    }
+    .input-wrap {
+      position: relative;
+    }
+    .input-wrap input {
+      width: 100%;
+      height: 44px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text-hi);
+      font-family: var(--mono);
+      font-size: 14px;
+      padding: 0 44px 0 14px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .input-wrap input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+    }
+    .toggle-vis {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-lo);
+      padding: 0;
+      display: flex;
+      align-items: center;
+      transition: color .2s;
+    }
+    .toggle-vis:hover { color: var(--text-mid); }
+
+    .btn-primary {
+      width: 100%;
+      height: 44px;
+      background: var(--accent);
+      border: none;
+      border-radius: 7px;
+      color: #fff;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: .04em;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: background .2s, transform .1s, box-shadow .2s;
+    }
+    .btn-primary:hover {
+      background: var(--accent-dim);
+      box-shadow: 0 0 20px rgba(59,130,246,.35);
+    }
+    .btn-primary:active { transform: scale(.98); }
+
+    /* ---------- error ---------- */
+    .alert-error {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(239,68,68,.08);
+      border: 1px solid rgba(239,68,68,.25);
+      border-radius: 7px;
+      padding: 11px 14px;
+      margin-bottom: 18px;
+      font-size: 13px;
+      color: #fca5a5;
+    }
+    .alert-error svg { flex-shrink: 0; color: var(--danger); }
+
+    /* ---------- footer link ---------- */
+    .card-footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-lo);
+    }
+    .card-footer a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .card-footer a:hover { text-decoration: underline; }
+
+    /* ---------- bottom meta ---------- */
+    .meta {
+      margin-top: 32px;
+      font-size: 11px;
+      color: var(--text-lo);
+      font-family: var(--mono);
+      letter-spacing: .04em;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Change this src to your actual logo path -->
-        <img class="logo" src="{{ url_for('static', filename='your_logo.jpeg') }}" alt="Logo" width="100">
+  <div class="layout">
 
-        <form action="{{ url_for('login') }}" method="post">
-            <input type="password" name="password" placeholder="Password" required><br>
-            <input type="submit" value="Login">
-        </form>
-
-        <a class="reset-link" href="{{ url_for('reset') }}">Forgot password? Reset here</a>
+    <div class="wordmark">
+      <div class="wordmark-icon">
+        <!-- shield icon -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <span class="wordmark-text">SecureStream</span>
     </div>
+
+    <div class="card">
+      <div class="lock-wrap">
+        <div class="lock">
+          <div class="lock-shackle"></div>
+          <div class="lock-body">
+            <div class="lock-dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-header">
+        <h1 class="card-title">Authentication Required</h1>
+        <p class="card-sub">Enter your stream password to access the encrypted camera feed.</p>
+      </div>
+
+      {% if error %}
+      <div class="alert-error">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <form action="{{ url_for('login') }}" method="post" autocomplete="off">
+        <div class="field">
+          <label for="password">Stream Password</label>
+          <div class="input-wrap">
+            <input id="password" type="password" name="password" placeholder="••••••••" required autofocus />
+            <button type="button" class="toggle-vis" onclick="toggleVis()" aria-label="Toggle password visibility">
+              <svg id="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">Authenticate</button>
+      </form>
+
+      <div class="card-footer">
+        <a href="{{ url_for('reset') }}">Reset stream password</a>
+      </div>
+    </div>
+
+    <p class="meta">AES-128-GCM &nbsp;|&nbsp; TLS 1.3 &nbsp;|&nbsp; PBKDF2-SHA256</p>
+  </div>
+
+  <script>
+    function toggleVis() {
+      const input = document.getElementById('password');
+      const icon  = document.getElementById('eye-icon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+      } else {
+        input.type = 'password';
+        icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+      }
+    }
+  </script>
 </body>
 </html>

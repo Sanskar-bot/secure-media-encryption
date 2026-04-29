@@ -1,65 +1,687 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stream Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #fafafa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .container {
-            background-color: #fff;
-            padding: 30px 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            width: 320px;
-            text-align: center;
-        }
-        .logo {
-            margin-bottom: 20px;
-        }
-        h2 {
-            color: #262626;
-        }
-        p {
-            font-size: 14px;
-            color: #333;
-            word-break: break-all;
-            margin-bottom: 20px;
-        }
-        a.button {
-            display: block;
-            text-decoration: none;
-            background-color: #3897f0;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            transition: background-color 0.3s;
-        }
-        a.button:hover {
-            background-color: #2e76d6;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureStream — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:    #0a0c10;
+      --bg-panel:   #0d1117;
+      --bg-surface: #111720;
+      --bg-input:   #161d28;
+      --border:     #1e2633;
+      --border-hi:  #2a3b52;
+      --accent:     #3b82f6;
+      --accent-dim: #1d4ed8;
+      --success:    #22c55e;
+      --warning:    #f59e0b;
+      --danger:     #ef4444;
+      --text-hi:    #e8edf5;
+      --text-mid:   #8b95a8;
+      --text-lo:    #3d4a5c;
+      --mono:       'JetBrains Mono', monospace;
+      --sans:       'Inter', system-ui, sans-serif;
+      --nav-h:      56px;
+    }
+
+    html { height: 100%; }
+    body {
+      min-height: 100%;
+      background: var(--bg-base);
+      font-family: var(--sans);
+      color: var(--text-hi);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===================== NAV ===================== */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: var(--nav-h);
+      background: rgba(10,12,16,.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      text-decoration: none;
+    }
+    .nav-brand-icon {
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--border-hi);
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+    }
+    .nav-brand-text {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+    }
+    .nav-spacer { flex: 1; }
+
+    /* status pill */
+    #status-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-mid);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 12px;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-lo);
+    }
+    .status-dot.online  { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .status-dot.offline { background: var(--danger);  box-shadow: 0 0 6px var(--danger);  }
+
+    .nav-btn {
+      height: 32px;
+      padding: 0 14px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text-mid);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: border-color .2s, color .2s, background .2s;
+    }
+    .nav-btn:hover {
+      border-color: var(--accent);
+      color: var(--text-hi);
+      background: rgba(59,130,246,.08);
+    }
+    .nav-btn.danger:hover {
+      border-color: var(--danger);
+      color: #fca5a5;
+      background: rgba(239,68,68,.08);
+    }
+
+    /* ===================== MAIN ===================== */
+    .main {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      grid-template-rows: auto 1fr;
+      gap: 20px;
+      padding: 20px 24px 24px;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* ===================== VIDEO PANEL ===================== */
+    .video-panel {
+      grid-column: 1;
+      grid-row: 1 / 3;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-title .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .3; }
+    }
+
+    .video-wrap {
+      position: relative;
+      background: #050709;
+      aspect-ratio: 16/9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .video-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .video-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border: 1px solid rgba(59,130,246,.08);
+    }
+    /* corner brackets */
+    .corner { position: absolute; width: 20px; height: 20px; border-color: rgba(59,130,246,.4); border-style: solid; }
+    .corner.tl { top:8px; left:8px;  border-width: 1.5px 0 0 1.5px; }
+    .corner.tr { top:8px; right:8px; border-width: 1.5px 1.5px 0 0; }
+    .corner.bl { bottom:8px; left:8px;  border-width: 0 0 1.5px 1.5px; }
+    .corner.br { bottom:8px; right:8px; border-width: 0 1.5px 1.5px 0; }
+
+    .video-no-feed {
+      text-align: center;
+      color: var(--text-lo);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 2;
+    }
+    .video-no-feed .no-feed-label {
+      display: block;
+      color: var(--text-mid);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    /* stream link bar */
+    .stream-links {
+      display: flex;
+      gap: 10px;
+      padding: 14px 16px;
+    }
+    .stream-link {
+      flex: 1;
+      height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--bg-surface);
+      color: var(--text-mid);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: border-color .2s, color .2s, background .2s;
+    }
+    .stream-link:hover {
+      border-color: var(--accent);
+      color: var(--text-hi);
+      background: rgba(59,130,246,.08);
+    }
+    .stream-link.primary {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(59,130,246,.1);
+    }
+
+    /* ===================== RIGHT COLUMN ===================== */
+    .right-col {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Key info card */
+    .key-card .panel-body { padding: 16px; }
+    .key-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .key-row:last-child { margin-bottom: 0; }
+    .key-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-lo);
+    }
+    .key-value {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--text-mid);
+      word-break: break-all;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 7px 10px;
+      line-height: 1.5;
+    }
+    .key-value.accent { color: var(--accent); }
+
+    /* copy button */
+    .copy-btn {
+      width: 100%;
+      height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-surface);
+      color: var(--text-mid);
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .04em;
+      cursor: pointer;
+      transition: all .2s;
+      margin-top: 12px;
+    }
+    .copy-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ===================== LOG PANEL ===================== */
+    .log-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .log-panel .panel-body {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #log-output {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.7;
+      color: var(--text-mid);
+      min-height: 220px;
+      max-height: 380px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    #log-output::-webkit-scrollbar { width: 4px; }
+    #log-output::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .log-line { display: block; white-space: pre-wrap; word-break: break-all; }
+    .log-line.INFO    { color: #64748b; }
+    .log-line.WARNING { color: #d97706; }
+    .log-line.ERROR   { color: #dc2626; }
+    .log-line.DEBUG   { color: #334155; }
+    .log-line .log-ts  { color: var(--text-lo); }
+    .log-line .log-lvl { font-weight: 500; }
+    .log-line.INFO .log-lvl    { color: var(--accent); }
+    .log-line.WARNING .log-lvl { color: var(--warning); }
+    .log-line.ERROR .log-lvl   { color: var(--danger); }
+
+    .log-controls {
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      border-top: 1px solid var(--border);
+    }
+    .log-controls button {
+      height: 26px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: transparent;
+      color: var(--text-lo);
+      font-family: var(--sans);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: .04em;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .log-controls button:hover {
+      border-color: var(--border-hi);
+      color: var(--text-mid);
+    }
+    #log-status {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-lo);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-left: 4px;
+    }
+    #log-status .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text-lo); }
+    #log-status.connected .dot { background: var(--success); animation: blink 2s infinite; }
+
+    /* ===================== BOTTOM PANELS (below video) ===================== */
+    .bottom-panels {
+      grid-column: 1;
+      grid-row: 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .main {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+      }
+      .video-panel, .right-col, .bottom-panels {
+        grid-column: 1;
+        grid-row: auto;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Optional logo if needed -->
-        <img class="logo" src="{{ url_for('static', filename='your_logo.jpeg') }}" alt="Logo" width="100">
 
-        <h2>Secure Camera</h2>
-        
+  <!-- ===================== NAV ===================== -->
+  <nav class="nav">
+    <a class="nav-brand" href="{{ url_for('dashboard') }}">
+      <div class="nav-brand-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <span class="nav-brand-text">SecureStream</span>
+    </a>
 
-        <a href="{{ url_for('video_stream') }}" class="button">View Live Video</a>
-        <a href="{{ url_for('encrypted_stream') }}" class="button">View Encrypted Stream</a>
-        <a href="{{ url_for('show_key') }}" class="button">View Encryption Key</a>
+    <div class="nav-spacer"></div>
+
+    <div id="status-pill">
+      <div class="status-dot" id="cam-dot"></div>
+      <span id="cam-label">Connecting…</span>
     </div>
+
+    <a class="nav-btn" href="{{ url_for('reset') }}">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+      </svg>
+      Reset Password
+    </a>
+    <a class="nav-btn danger" href="{{ url_for('logout') }}">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      Logout
+    </a>
+  </nav>
+
+  <!-- ===================== MAIN ===================== -->
+  <div class="main">
+
+    <!-- ===== VIDEO PANEL ===== -->
+    <div class="video-panel">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">
+            <span class="dot"></span>
+            Live Feed — AES-128-GCM Encrypted
+          </span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text-lo)" id="frame-counter">—</span>
+        </div>
+        <div class="video-wrap">
+          <img id="live-img" src="{{ url_for('video_stream') }}" alt="Live encrypted camera feed" onerror="handleFeedError()" />
+          <div class="video-overlay">
+            <div class="corner tl"></div>
+            <div class="corner tr"></div>
+            <div class="corner bl"></div>
+            <div class="corner br"></div>
+          </div>
+        </div>
+        <div class="stream-links">
+          <a class="stream-link primary" href="{{ url_for('video_stream') }}" target="_blank">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+            Raw Video
+          </a>
+          <a class="stream-link" href="{{ url_for('encrypted_stream') }}" target="_blank">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+            </svg>
+            Encrypted Stream
+          </a>
+          <a class="stream-link" href="{{ url_for('show_key') }}" target="_blank">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+            </svg>
+            View Key
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RIGHT COLUMN ===== -->
+    <div class="right-col">
+
+      <!-- Encryption Key Info -->
+      <div class="panel key-card">
+        <div class="panel-header">
+          <span class="panel-title">Encryption Details</span>
+        </div>
+        <div class="panel-body">
+          <div class="key-row">
+            <span class="key-label">Algorithm</span>
+            <span class="key-value accent">AES-128-GCM (AEAD)</span>
+          </div>
+          <div class="key-row">
+            <span class="key-label">Key Fingerprint (first 8 bytes)</span>
+            <span class="key-value">{{ fingerprint }}</span>
+          </div>
+          <div class="key-row">
+            <span class="key-label">Full Key (Base64)</span>
+            <span class="key-value" id="b64-key" style="font-size:10px">{{ encoded_key }}</span>
+          </div>
+          <button class="copy-btn" onclick="copyKey()">Copy Key to Clipboard</button>
+        </div>
+      </div>
+
+      <!-- Status Card -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">System Status</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text-lo)" id="server-time">—</span>
+        </div>
+        <div class="panel-body" style="padding:16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:7px;padding:12px">
+              <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-lo);margin-bottom:6px">Camera</div>
+              <div id="status-cam" style="font-family:var(--mono);font-size:12px;color:var(--text-mid)">—</div>
+            </div>
+            <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:7px;padding:12px">
+              <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-lo);margin-bottom:6px">Cipher</div>
+              <div id="status-cipher" style="font-family:var(--mono);font-size:12px;color:var(--text-mid)">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Panel -->
+      <div class="panel log-panel" style="flex:1">
+        <div class="panel-header">
+          <span class="panel-title">Server Logs</span>
+          <div id="log-status">
+            <div class="dot"></div>
+            <span id="log-status-text">Disconnected</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div id="log-output"></div>
+          <div class="log-controls">
+            <button onclick="clearLogs()">Clear</button>
+            <button onclick="toggleAutoScroll()">Auto-scroll: <span id="scroll-state">ON</span></button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /right-col -->
+
+  </div><!-- /main -->
+
+  <script>
+    // ---- Key copy ----
+    function copyKey() {
+      const k = document.getElementById('b64-key').textContent;
+      navigator.clipboard.writeText(k).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = 'Copied';
+        setTimeout(() => btn.textContent = 'Copy Key to Clipboard', 2000);
+      });
+    }
+
+    // ---- Frame counter (approximation from img naturalWidth changes) ----
+    let frameCount = 0;
+    let fps = 0;
+    let lastFpsTime = Date.now();
+    const liveImg = document.getElementById('live-img');
+    liveImg.addEventListener('load', () => {
+      frameCount++;
+      const now = Date.now();
+      const delta = (now - lastFpsTime) / 1000;
+      if (delta >= 1) {
+        fps = Math.round(frameCount / delta);
+        frameCount = 0;
+        lastFpsTime = now;
+        document.getElementById('frame-counter').textContent = fps + ' fps';
+      }
+    });
+
+    function handleFeedError() {
+      document.getElementById('frame-counter').textContent = 'no signal';
+    }
+
+    // ---- Status polling ----
+    function pollStatus() {
+      fetch('/status')
+        .then(r => r.json())
+        .then(d => {
+          const dot   = document.getElementById('cam-dot');
+          const label = document.getElementById('cam-label');
+          const isOn  = d.camera === 'online';
+
+          dot.className   = 'status-dot ' + (isOn ? 'online' : 'offline');
+          label.textContent = isOn ? 'Camera Online' : 'Camera Offline';
+
+          document.getElementById('status-cam').textContent    = d.camera;
+          document.getElementById('status-cam').style.color    = isOn ? 'var(--success)' : 'var(--danger)';
+          document.getElementById('status-cipher').textContent = d.algorithm || '—';
+          document.getElementById('server-time').textContent   = d.server_time || '—';
+        })
+        .catch(() => {
+          document.getElementById('cam-label').textContent = 'Status Error';
+        });
+    }
+    pollStatus();
+    setInterval(pollStatus, 4000);
+
+    // ---- SSE logs ----
+    let autoScroll = true;
+    const logOutput   = document.getElementById('log-output');
+    const logStatus   = document.getElementById('log-status');
+    const logStatusTx = document.getElementById('log-status-text');
+
+    function levelClass(line) {
+      if (line.includes('ERROR'))   return 'ERROR';
+      if (line.includes('WARNING')) return 'WARNING';
+      if (line.includes('DEBUG'))   return 'DEBUG';
+      return 'INFO';
+    }
+
+    function appendLog(text) {
+      const el  = document.createElement('span');
+      const cls = levelClass(text);
+      el.className = 'log-line ' + cls;
+      // colour timestamp vs rest
+      el.innerHTML = text.replace(
+        /^\[(\d{2}:\d{2}:\d{2})\]\s*(\w+)\s+/,
+        '<span class="log-ts">[$1]</span> <span class="log-lvl">$2</span> '
+      );
+      logOutput.appendChild(el);
+      logOutput.appendChild(document.createTextNode('\n'));
+      // cap DOM to 400 lines
+      while (logOutput.childElementCount > 400) {
+        logOutput.removeChild(logOutput.firstChild);
+      }
+      if (autoScroll) logOutput.scrollTop = logOutput.scrollHeight;
+    }
+
+    function connectLogs() {
+      const es = new EventSource('/logs');
+      es.onopen = () => {
+        logStatus.classList.add('connected');
+        logStatusTx.textContent = 'Connected';
+      };
+      es.onmessage = e => appendLog(e.data);
+      es.onerror = () => {
+        logStatus.classList.remove('connected');
+        logStatusTx.textContent = 'Reconnecting…';
+        es.close();
+        setTimeout(connectLogs, 3000);
+      };
+    }
+    connectLogs();
+
+    function clearLogs() { logOutput.innerHTML = ''; }
+
+    function toggleAutoScroll() {
+      autoScroll = !autoScroll;
+      document.getElementById('scroll-state').textContent = autoScroll ? 'ON' : 'OFF';
+    }
+  </script>
 </body>
 </html>

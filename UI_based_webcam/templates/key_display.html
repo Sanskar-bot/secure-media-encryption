@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureStream — Encryption Key</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-base:#0a0c10;--bg-card:#0e1117;--bg-input:#151921;--border:#1e2633;
+      --accent:#3b82f6;--text-hi:#e8edf5;--text-mid:#8b95a8;--text-lo:#4a5568;
+      --mono:'JetBrains Mono',monospace;--sans:'Inter',system-ui,sans-serif;
+    }
+    html,body{height:100%;background:var(--bg-base);font-family:var(--sans);color:var(--text-hi);}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(59,130,246,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+    .layout{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+    .card{width:100%;max-width:520px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:40px 36px 36px;position:relative;overflow:hidden;}
+    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);}
+    h1{font-size:20px;font-weight:600;margin-bottom:6px;}
+    .sub{font-size:13px;color:var(--text-mid);margin-bottom:28px;line-height:1.5;}
+    .row{margin-bottom:16px;}
+    .lbl{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text-lo);margin-bottom:6px;}
+    .val{font-family:var(--mono);font-size:12px;color:var(--text-mid);background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:10px 12px;word-break:break-all;line-height:1.6;}
+    .val.hl{color:var(--accent);font-size:14px;}
+    .btn{height:40px;padding:0 18px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--text-mid);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:all .2s;margin-top:20px;}
+    .btn:hover{border-color:var(--accent);color:var(--text-hi);background:rgba(59,130,246,.08);}
+    .btn-copy{border-color:var(--accent);color:var(--accent);}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;}
+  </style>
+</head>
+<body>
+<div class="layout">
+  <div class="card">
+    <h1>Active Encryption Key</h1>
+    <p class="sub">This is the AES-128-GCM key currently in use for all camera stream frames. Handle with care.</p>
+
+    <div class="row">
+      <div class="lbl">Algorithm</div>
+      <div class="val hl">AES-128-GCM (AEAD)</div>
+    </div>
+    <div class="row">
+      <div class="lbl">Key Fingerprint (first 8 bytes, hex)</div>
+      <div class="val hl">{{ fingerprint }}</div>
+    </div>
+    <div class="row">
+      <div class="lbl">Full Key — Base64 encoded (16 bytes)</div>
+      <div class="val" id="b64key">{{ encoded_key }}</div>
+    </div>
+    <div class="row">
+      <div class="lbl">Key Derivation</div>
+      <div class="val">PBKDF2-HMAC-SHA256 &nbsp;|&nbsp; 100,000 iterations &nbsp;|&nbsp; Static salt</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-copy" onclick="copyKey()">Copy Base64 Key</button>
+      <a class="btn" href="{{ url_for('dashboard') }}">Return to Dashboard</a>
+    </div>
+  </div>
+</div>
+<script>
+  function copyKey() {
+    navigator.clipboard.writeText(document.getElementById('b64key').textContent).then(() => {
+      const b = document.querySelector('.btn-copy');
+      b.textContent = 'Copied to Clipboard';
+      setTimeout(() => b.textContent = 'Copy Base64 Key', 2000);
+    });
+  }
+</script>
+</body>
+</html>

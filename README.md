@@ -1,198 +1,434 @@
-# Secure Media Encryption System (AES-256-GCM)
+# SecureStream
 
-## Overview
+**AES-128-GCM Encrypted Camera Streaming over HTTPS**
 
-This project is a **security-engineering focused implementation** of an end-to-end encrypted media handling system. It is designed to explore **real-world cryptographic primitives, authenticated encryption, secure key handling, and integrity verification** using industry-standard techniques.
-
-The system encrypts and decrypts **binary media data (images and videos)** using **AES-256-GCM**, the same authenticated encryption mode used in modern protocols such as **TLS 1.3, QUIC, Signal, and secure cloud storage platforms**.
-
-Unlike basic cryptography demos, this project operates at the **byte level on real media files**, addressing challenges such as nonce management, authentication tags, binary correctness, and tamper detection.
+SecureStream is a self-hosted, end-to-end encrypted camera streaming system built with Python and Flask. Every frame captured from a local webcam is encrypted using AES-128-GCM before being transmitted, ensuring confidentiality and tamper detection at the byte level. The server communicates exclusively over TLS, and authentication is enforced via a PBKDF2-derived key password.
 
 ---
 
-## Security Objectives
+## Table of Contents
 
-- **Confidentiality**: Media content remains unreadable without the encryption key
-- **Integrity**: Any modification to encrypted data is detected
-- **Authenticated Encryption**: Encryption and authentication are cryptographically bound
-- **Key Isolation**: Key material is kept separate from encrypted outputs
-- **Transport Awareness**: TLS and certificate handling explored for secure delivery
+- [Features](#features)
+- [Architecture Overview](#architecture-overview)
+- [Cryptographic Design](#cryptographic-design)
+- [Project Structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Running the Application](#running-the-application)
+- [Usage Guide](#usage-guide)
+- [Configuration](#configuration)
+- [Security Considerations](#security-considerations)
+- [Troubleshooting](#troubleshooting)
+- [Author](#author)
+
+---
+
+## Features
+
+| Capability | Detail |
+|---|---|
+| Frame encryption | AES-128-GCM (AEAD) per frame |
+| Key derivation | PBKDF2-HMAC-SHA256, 100,000 iterations |
+| Transport security | Self-signed TLS (HTTPS only) |
+| Authentication | Password-protected session |
+| Live dashboard | Embedded video feed with real-time server logs via Server-Sent Events |
+| Key management | Password reset re-derives the AES key instantly |
+| One-click startup | `start.bat` handles dependencies and certificate generation |
+
+---
+
+## Architecture Overview
+
+```
+Browser (HTTPS)
+    |
+    |  TLS 1.x (self-signed cert)
+    v
+Flask Server (stream.py)
+    |
+    |-- /               Login page
+    |-- /login          POST — password authentication
+    |-- /dashboard      Main control panel (auth required)
+    |-- /video          MJPEG stream — raw frames (auth required)
+    |-- /encrypted      Plain-text encrypted Base64 stream (auth required)
+    |-- /key            View active AES key (auth required)
+    |-- /status         JSON camera and cipher status (auth required)
+    |-- /logs           Server-Sent Events — live log feed (auth required)
+    |-- /reset          Password and key reset
+    |-- /logout         Session termination
+    |
+    v
+OpenCV Capture (CAP_DSHOW)
+    |
+    v
+AES-128-GCM Encryption (per frame)
+    Nonce: 16 random bytes (os.urandom)
+    Key:   PBKDF2(password, salt, SHA256, 100000 iter, 16 bytes)
+    Output: Base64(nonce || ciphertext || auth_tag)
+```
 
 ---
 
 ## Cryptographic Design
 
-### Algorithm
-- **AES-256-GCM (AEAD)**
-  - 256-bit symmetric key
-  - 96-bit nonce generated per encryption
-  - 128-bit authentication tag
+### Algorithm — AES-128-GCM (AEAD)
 
-### Why AES-GCM?
-- Industry-standard authenticated encryption
-- Prevents ciphertext tampering and forgery
-- Resistant to padding oracle attacks
-- Used in TLS, VPNs, secure messaging, and disk encryption
+AES-GCM (Galois/Counter Mode) provides both **confidentiality** and **authenticated integrity** in a single operation. This makes it resistant to ciphertext tampering and forgery without requiring a separate HMAC.
 
----
+| Property | Value |
+|---|---|
+| Mode | GCM (Galois/Counter Mode) |
+| Key size | 128 bits (16 bytes) |
+| Nonce | 128 bits (16 bytes), cryptographically random per frame |
+| Auth tag | 128 bits (appended automatically by `cryptography` library) |
+| Output format | `Base64( nonce \|\| ciphertext \|\| tag )` |
 
-## High-Level Architecture
+### Key Derivation — PBKDF2-HMAC-SHA256
 
-[ Media File ]
-↓
-[ AES-256-GCM Encryption ]
-↓
-[ Ciphertext + Nonce + Auth Tag ]
-↓
-[ Secure Storage / Transport ]
-↓
-[ AES-256-GCM Decryption ]
-↓
-[ Original Media Restored ]
+The AES key is never stored directly. It is derived on-the-fly from the stream password using PBKDF2:
 
-yaml
-Copy code
+```
+key = PBKDF2(
+    password = <stream password>,
+    salt     = b"StaticSaltForStream",
+    hash     = SHA-256,
+    iterations = 100,000,
+    key_length = 16 bytes
+)
+```
 
-Each encryption operation produces:
-- Ciphertext
-- Nonce
-- Authentication tag
+> **Note:** The static salt is appropriate for a single-user local deployment. For multi-user or production use, a unique per-user salt should be stored alongside the password hash.
 
-All three components are **mandatory** for successful decryption.
+### Transport — TLS (HTTPS)
+
+Flask is configured with a self-signed certificate generated by `setup_certs.py`. The certificate embeds both the machine's LAN IP and `localhost` as Subject Alternative Names (SANs), allowing access from both the host and the local network.
 
 ---
 
 ## Project Structure
 
+```
 secure-media-encryption/
-│
-├── Python_encryption_test/
-│ ├── Photo_encryption.py # Image encryption using AES-GCM
-│ ├── Photo_decryption.py # Image decryption & integrity verification
-│ ├── semi_final.py # Unified reference implementation
-│ ├── video_encrypt.py # Video encryption experiment
-│ └── video_decrypt.py # Video decryption experiment
-│
-├── certificate_experiments/
-│ ├── certificate_generator.py # TLS certificate generation
-│ └── (certificates excluded from repo)
-│
-├── README.md
-└── .gitignore
-
-yaml
-Copy code
-
-> **Security Note:** Cryptographic keys, certificates, encrypted binaries, and media files are intentionally excluded from version control.
-
----
-
-## File Responsibilities (Detailed)
-
-### `Photo_encryption.py`
-- Generates a cryptographically secure **256-bit AES key**
-- Generates a unique nonce per encryption
-- Encrypts image files in binary mode
-- Outputs encrypted binary data with authentication tag
-
-### `Photo_decryption.py`
-- Loads encrypted binary input
-- Verifies authentication tag integrity
-- Rejects modified or corrupted ciphertext
-- Restores original image on successful verification
-
-### `semi_final.py`
-- Consolidated encryption/decryption workflow
-- Demonstrates full lifecycle: encrypt → decrypt → validate
-- Serves as the **primary reference implementation**
-
-### Video Encryption Scripts
-- Apply AES-GCM to large binary video files
-- Validate encryption scalability and correctness
-- Demonstrate integrity protection on streaming-sized data
+|
+|-- start.bat                     One-click launcher (Windows)
+|-- certificate_generater.py      Legacy standalone cert generator
+|-- README.md
+|
+|-- UI_based_webcam/
+|   |-- stream.py                 Main Flask application
+|   |-- passwordtokey.py          PBKDF2 key derivation module
+|   |-- setup_certs.py            TLS certificate generator
+|   |-- generate_qr.py            QR code generator for LAN URL
+|   |-- streampassword.txt        Active stream password (plain text, local only)
+|   |-- server_certificate.crt    Generated TLS certificate (not committed)
+|   |-- key.pem                   Generated TLS private key (not committed)
+|   |
+|   |-- templates/
+|   |   |-- login.html            Authentication page
+|   |   |-- dashboard.html        Main control panel
+|   |   |-- reset.html            Password reset page
+|   |   |-- key_display.html      AES key display page
+|   |
+|   |-- static/
+|       |-- your_logo.jpeg        Application logo
+|
+|-- Python_encryption_test/       Standalone encryption experiments
+|   |-- Photo_encryption.py
+|   |-- Photo_decryption.py
+|   |-- semi_final.py
+|   |-- capture_cam.py
+|   |-- test.py
+```
 
 ---
 
-## How to Run (Local)
+## Prerequisites
 
-### Requirements
-- Python 3.9+
-- PyCryptodome
+- **Operating System:** Windows 10 / 11 (tested), Linux/macOS (manual setup required)
+- **Python:** 3.9 or later
+- **Webcam:** Any USB or built-in camera recognised by Windows
+- **Network:** LAN access for remote viewing (optional)
 
-Install dependency:
+---
+
+## Installation
+
+### Option A — Automatic (Recommended)
+
+Simply double-click `start.bat`. It will:
+
+1. Verify Python is installed
+2. Install all required packages via `pip`
+3. Generate the TLS certificate if not present
+4. Create the default password file
+5. Start the server
+
+### Option B — Manual
+
+**1. Clone the repository**
+
 ```bash
-pip install pycryptodome
-Encrypt an Image
-bash
-Copy code
-python Photo_encryption.py
-Decrypt an Image
-bash
-Copy code
-python Photo_decryption.py
-File paths for media inputs can be configured inside the scripts.
+git clone https://github.com/Sanskar-bot/secure-media-encryption.git
+cd secure-media-encryption
+```
 
-Key Management (Current Scope)
-Encryption keys are generated dynamically per execution
+**2. Install dependencies**
 
-Keys are stored locally only for proof-of-concept validation
+```bash
+pip install flask opencv-python cryptography qrcode pillow
+```
 
-No key material is committed to the repository
+**3. Generate TLS certificates**
 
-Planned / Explored Enhancements
-Password-based key derivation (PBKDF2 / scrypt)
+```bash
+cd UI_based_webcam
+python setup_certs.py
+```
 
-Secure key storage (hardware-backed or vault-based)
+This creates `server_certificate.crt` and `key.pem` in the `UI_based_webcam/` directory. You can optionally specify a custom IP:
 
-QR-based secure device onboarding
+```bash
+python setup_certs.py --ip 192.168.1.100
+```
 
-Encrypted key exchange over TLS
+**4. Start the server**
 
-Threat Model
-Attacker Capabilities
-Read access to encrypted files
+```bash
+python stream.py
+```
 
-Ability to modify ciphertext
+---
 
-Network traffic observation
+## Running the Application
 
-Security Guarantees
-Plaintext cannot be recovered without the key
+### Windows (Recommended)
 
-Ciphertext tampering is detected during decryption
+```
+Double-click start.bat
+```
 
-Authentication tags prevent forgery
+The console window will display the server URL and default credentials.
 
-Nonce reuse is explicitly avoided per encryption run
+### Manual Start
 
-What This Project Is Not
-❌ Not a blockchain-based system
+```bash
+cd UI_based_webcam
+python stream.py
+```
 
-❌ Not a cloud storage product
+### Accessing the Dashboard
 
-❌ Not UI or frontend focused
+Open a browser and navigate to:
 
-This project prioritizes cryptographic correctness and security engineering fundamentals.
+```
+https://localhost:5000
+```
 
-Practical Applications
-Secure camera and CCTV systems
+or from another device on your LAN:
 
-Encrypted medical image storage
+```
+https://<your-machine-ip>:5000
+```
 
-Privacy-preserving video pipelines
+> **Browser Warning:** Because the certificate is self-signed, your browser will display a security warning. Click **Advanced** and then **Proceed to localhost** (or the IP address). This is expected behaviour for local deployments.
 
-End-to-end encrypted media delivery
+---
 
-IoT camera provisioning systems
+## Usage Guide
 
-Entrepreneurial Perspective
-This project represents the core cryptographic engine behind secure media platforms. It focuses on building correct, tamper-resistant foundations, which are critical before scaling into production systems or products.
+### Login
 
-Disclaimer
-This project is intended for educational, research, and prototyping purposes only.
-It is not production-hardened and does not include operational controls such as access control layers, secure key vaults, or hardened deployment pipelines.
+The default stream password is `admin123`. Enter it on the login page and click **Authenticate**.
 
-Author
-Sanskar
+### Dashboard
+
+The dashboard provides:
+
+| Panel | Description |
+|---|---|
+| Live Feed | Embedded MJPEG video from the webcam |
+| Encryption Details | Active key fingerprint and full Base64 key |
+| System Status | Camera state and server time, polled every 4 seconds |
+| Server Logs | Real-time log stream via Server-Sent Events |
+
+**Stream links** in the video panel open the raw MJPEG feed, the Base64-encoded AES-GCM ciphertext stream, and the key display page in new tabs.
+
+### Reset Password
+
+Navigate to **Reset Password** from the navigation bar. Changing the password immediately re-derives the AES key. All active sessions are invalidated and you will need to log in again.
+
+### View Encryption Key
+
+The `/key` route displays the current AES-128-GCM key (Base64-encoded) and its first-8-byte fingerprint for verification.
+
+### Generate QR Code (Optional)
+
+To generate a QR code pointing to the server URL for easy mobile access:
+
+```bash
+cd UI_based_webcam
+python generate_qr.py
+```
+
+This saves `password_page_qr.png` in the working directory.
+
+---
+
+## Mobile Access — Streaming to Your Phone
+
+Because the server uses a self-signed certificate, mobile browsers will block the connection by default. You need to install the certificate as a trusted CA on your device. This is a one-time step.
+
+### Step 1 — Transfer the Certificate to Your Phone
+
+After running `start.bat` or `setup_certs.py`, the file `UI_based_webcam/server_certificate.crt` will exist on your PC.
+
+Transfer it to your phone using any of the following methods:
+
+- **USB** — copy the file to your phone's Downloads folder.
+- **Email** — email the `.crt` file to yourself and open it on the phone.
+- **Local web server** — place the file in a folder accessible on your LAN (e.g. via Python's `http.server`) and download it from the phone's browser.
+- **QR code** — host the file and scan the URL with your phone's camera.
+
+> The certificate file is not sensitive on its own — it is the public certificate only, not the private key. It is safe to transfer over your local network.
+
+---
+
+### Step 2 — Install the Certificate
+
+#### Android
+
+1. Open **Settings** and search for **"Install certificate"** or navigate to:  
+   `Settings > Security > More security settings > Install from storage`
+2. Locate the transferred `server_certificate.crt` file in your Downloads.
+3. Select it. When prompted for certificate type, choose **CA Certificate** (or **VPN and apps** on some devices).
+4. Accept any warning that appears — this applies only to your local device.
+5. Give the certificate a recognisable name (e.g. `SecureStream`).
+
+> On some Android versions (12+), navigate to:  
+> `Settings > Security > Encryption & credentials > Install a certificate > CA certificate`
+
+#### iOS / iPadOS
+
+1. Airdrop the `.crt` file to your iPhone, or open it from an email attachment / Safari download.
+2. iOS will prompt:  
+   **"Profile Downloaded — Review the downloaded profile in the Settings app."**  
+   Tap **Close**.
+3. Open **Settings > General > VPN & Device Management**.
+4. Under **Downloaded Profile**, tap the `SecureStream` profile and tap **Install**.
+5. Enter your passcode if requested.
+6. After installation, navigate to:  
+   `Settings > General > About > Certificate Trust Settings`
+7. Under **Enable Full Trust for Root Certificates**, toggle on the `SecureStream` certificate.
+8. Tap **Continue** on the confirmation dialog.
+
+> The trust toggle in step 7 is mandatory on iOS. Without it the certificate is installed but not trusted, and browsers will still show a warning.
+
+---
+
+### Step 3 — Access the Stream
+
+Once the certificate is installed and trusted:
+
+1. Ensure your phone is on the **same Wi-Fi network** as the PC running SecureStream.
+2. Open any browser (Safari, Chrome, Firefox) and navigate to:
+
+   ```
+   https://<your-pc-ip>:5000
+   ```
+
+   Replace `<your-pc-ip>` with the LAN IP shown in the `start.bat` output or in `server_certificate.crt` generation output.
+
+3. The login page should load with no certificate warning.
+4. Enter your stream password and tap **Authenticate**.
+
+> **Finding your PC's IP:** On Windows, run `ipconfig` in a terminal and look for the `IPv4 Address` under your Wi-Fi adapter (usually `192.168.x.x`).
+
+---
+
+## Configuration
+
+All configuration is handled through constants at the top of the relevant files.
+
+### `UI_based_webcam/stream.py`
+
+| Constant | Default | Description |
+|---|---|---|
+| `app.secret_key` | `"super-secret-session-key"` | Flask session signing key. Change before deployment. |
+| `PASSWORD_FILE` | `"streampassword.txt"` | Path to the plain-text password file. |
+| Port | `5000` | Change the `port=` argument in `app.run()`. |
+
+### `UI_based_webcam/passwordtokey.py`
+
+| Constant | Default | Description |
+|---|---|---|
+| `DEFAULT_PASSWORD` | `"admin123"` | Used only if no password file exists. |
+| `SALT` | `b"StaticSaltForStream"` | PBKDF2 salt. Change this value and regenerate your password. |
+
+### `UI_based_webcam/setup_certs.py`
+
+Run with `--ip <address>` to embed a specific IP in the certificate's SAN field instead of auto-detecting.
+
+---
+
+## Security Considerations
+
+| Item | Current State | Recommendation for Production |
+|---|---|---|
+| Password storage | Plain text in `streampassword.txt` | Store as a salted PBKDF2 hash |
+| Session secret key | Hardcoded string | Generate randomly at startup and persist securely |
+| PBKDF2 salt | Static constant | Use a unique random salt per password |
+| TLS certificate | Self-signed | Use a CA-signed certificate (e.g. Let's Encrypt) |
+| Access control | Single shared password | Implement per-user credentials |
+| Key rotation | Manual password reset | Automate nonce and key rotation policies |
+
+This project is intended for **local, educational, and prototyping purposes**. It is not production-hardened.
+
+---
+
+## Troubleshooting
+
+### Camera does not open
+
+- Ensure no other application (Zoom, Teams, OBS) is using the webcam.
+- The application uses `cv2.CAP_DSHOW` (DirectShow, Windows only). On Linux, remove that backend argument.
+
+### Browser shows ERR_CERT_AUTHORITY_INVALID
+
+This is expected. The certificate is self-signed. Click **Advanced** then **Proceed**.
+
+### `ModuleNotFoundError`
+
+Run the dependency install manually:
+
+```bash
+pip install flask opencv-python cryptography qrcode pillow
+```
+
+### Port 5000 already in use
+
+Change the port in the last line of `stream.py`:
+
+```python
+app.run(host="0.0.0.0", port=5001, ssl_context=(cert, pkey), threaded=True)
+```
+
+### Certificate or key not found on startup
+
+Regenerate from the `UI_based_webcam` directory:
+
+```bash
+python setup_certs.py
+```
+
+---
+
+## Author
+
+**Sanskar Phougat**  
 Cybersecurity | Cryptography | Secure Systems Engineering
 
+Project repository: [github.com/Sanskar-bot/secure-media-encryption](https://github.com/Sanskar-bot/secure-media-encryption)
+
+---
+
+*This project is for educational, research, and prototyping purposes only. It is not intended for production deployment without additional security hardening.*
