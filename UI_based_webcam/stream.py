@@ -229,9 +229,11 @@ def video_stream():
     if not session.get("authenticated"):
         return redirect(url_for("login_page"))
 
+    client_addr = request.remote_addr  # capture before generator runs outside context
+
     def generate():
         init_camera()
-        log.info("Video stream started for %s", request.remote_addr)
+        log.info("Video stream started for %s", client_addr)
         try:
             while True:
                 frame, _ = get_encrypted_frame()
@@ -242,7 +244,7 @@ def video_stream():
                     )
                 time.sleep(0.04)   # ~25 fps cap
         except GeneratorExit:
-            log.info("Video stream closed by client.")
+            log.info("Video stream closed by client %s.", client_addr)
 
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
@@ -252,9 +254,11 @@ def encrypted_stream():
     if not session.get("authenticated"):
         return redirect(url_for("login_page"))
 
+    client_addr = request.remote_addr  # capture before generator runs outside context
+
     def generate():
         init_camera()
-        log.info("Encrypted stream started for %s", request.remote_addr)
+        log.info("Encrypted stream started for %s", client_addr)
         try:
             while True:
                 _, encrypted = get_encrypted_frame()
@@ -262,7 +266,7 @@ def encrypted_stream():
                     yield encrypted + "\n"
                 time.sleep(0.04)
         except GeneratorExit:
-            log.info("Encrypted stream closed by client.")
+            log.info("Encrypted stream closed by client %s.", client_addr)
 
     return Response(generate(), mimetype="text/plain")
 
